@@ -4,20 +4,19 @@
     };
 
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    const { word, lang } = request, 
-        url = `https://en.wiktionary.org/w/api.php?action=parse&page=${word}&section=5&format=jsonfm`
-    fetch(url, { 
+    const { word, lang } = request;
+    console.log("came");
+    url = `https://en.wikipedia.org/api/rest_v1/page/summary/${word}`
+
+        let fetchRes = fetch(url, { 
             method: 'GET',
-            credentials: 'omit',
-            headers: { "Access-Control-Allow-Origin": "*"}
         })
-        .then((response) => { 
-            console.log(response) 
-            response.text()
-        })
-        .then((text) => {
-            const document = new DOMParser().parseFromString(text, 'text/html'),
-                content = extractMeaning(document, { word, lang });
+        fetchRes.then(response =>  response.status === 200 &&  response.json()) 
+        .then(body => {
+            console.log(body)
+        
+            const document = body,
+                content = extractMeaning(response, { word, lang });
 
             sendResponse({ content });
 
@@ -32,44 +31,46 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 function extractMeaning (document, context) {
-    if (!document.querySelector("[data-dobid='hdw']")) { return null; }
-    
-    var word = document.querySelector("[data-dobid='hdw']").textContent,
-        definitionDiv = document.querySelector("div[data-dobid='dfn']"),
-        meaning = "";
-
-    if (definitionDiv) {
-        definitionDiv.querySelectorAll("span").forEach(function(span){
-            if(!span.querySelector("sup"))
-                 meaning = meaning + span.textContent;
-        });
+    if(body === false) {
+        var word = "",
+            meaning = "";
+    } else {
+        var word = document.displaytitle,
+            meaning = document.extract;
     }
 
-    meaning = meaning[0].toUpperCase() + meaning.substring(1);
+    // if (definitionDiv) {
+    //     definitionDiv.querySelectorAll("span").forEach(function(span){
+    //         if(!span.querySelector("sup"))
+    //              meaning = meaning + span.textContent;
+    //     });
+    // }
 
-    var audio = document.querySelector("audio[jsname='QInZvb']"),
-        source = document.querySelector("audio[jsname='QInZvb'] source"),
-        audioSrc = source && source.getAttribute('src');
+    // meaning = meaning[0].toUpperCase() + meaning.substring(1);
 
-    if (audioSrc) {
-        !audioSrc.includes("http") && (audioSrc = audioSrc.replace("//", "https://"));
-    }
-    else if (audio) {
-        let exactWord = word.replace(/·/g, ''), // We do not want syllable seperator to be present.
+    // var audio = document.querySelector("audio[jsname='QInZvb']"),
+    //     source = document.querySelector("audio[jsname='QInZvb'] source"),
+    //     audioSrc = source && source.getAttribute('src');
+
+    // if (audioSrc) {
+    //     !audioSrc.includes("http") && (audioSrc = audioSrc.replace("//", "https://"));
+    // }
+    // else if (audio) {
+    //     let exactWord = word.replace(/·/g, ''), // We do not want syllable seperator to be present.
             
-        queryString = new URLSearchParams({
-            text: exactWord, 
-            enc: 'mpeg', 
-            lang: context.lang, 
-            speed: '0.4', 
-            client: 'lr-language-tts', 
-            use_google_only_voices: 1
-        }).toString();
+    //     queryString = new URLSearchParams({
+    //         text: exactWord, 
+    //         enc: 'mpeg', 
+    //         lang: context.lang, 
+    //         speed: '0.4', 
+    //         client: 'lr-language-tts', 
+    //         use_google_only_voices: 1
+    //     }).toString();
 
-        // audioSrc = `${GOOGLE_SPEECH_URI}?${queryString}`;
-    }
+    //     audioSrc = `${GOOGLE_SPEECH_URI}?${queryString}`;
+    // }
 
-    return { word: word, meaning: meaning, audioSrc: audioSrc };
+    return { word: word, meaning: meaning };
 };
 
 function saveWord (content) {

@@ -17,6 +17,7 @@
             padding: 10px;
         }
     </style>
+     <script src="content_scripts/dictionary.js"></script>
     <head>
 
     <body>
@@ -63,11 +64,11 @@
             words etc.
 
             <input type="textarea" id="select"></input>
-            <input type="textarea" id="sel" disabled></input>
+            <input type="textarea" id="sel" disabled style="width: 200px; height: 200px; display:flex; flex-wrap: wrap;"></input>
 
         </p>
 
-        <script>
+        <!-- <script>
 
             document.addEventListener('mouseup', event => {  
                 if(window.getSelection().toString().length) {
@@ -75,19 +76,23 @@
                     console.log(exactText);
                     document.getElementById("sel").value = window.getSelection().toString();   
                     const  word = window.getSelection().toString();
-                    url = `https://en.wiktionary.org/w/api.php?action=parse&page=${word}&section=5&format=jsonfm`
+                    url = `https://en.wikipedia.org/api/rest_v1/page/summary/${word}`
     
-                    fetch(url, { 
+                    let fetchRes = fetch(url, { 
                         method: 'GET',
-                        credentials: 'omit',
-                        headers: { "Access-Control-Allow-Origin": "*"}
                     })
-                    .then((response) => {
-                        console.log(response)
+                    fetchRes.then(response => response.status === 200 && response.json()) 
+                    .then(body => {
+                        console.log(body)
+                        if(body !== false)
+                            document.getElementById("sel").value = body.extract;
+                        else 
+                        document.getElementById("sel").value = "Not Found"
                     })
                 }
             })
-        </script>
+        </script> -->
+       
     </body>
 
 </html>

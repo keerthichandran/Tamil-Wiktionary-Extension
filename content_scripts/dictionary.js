@@ -4,18 +4,33 @@
         LANGUAGE,
         TRIGGER_KEY;
 
-    function showMeaning (event){
+        // document.addEventListener('mouseup', event => {  
+        //     showMeaning(event)
+        // })
+
+    function showMeaning (event) {
+        console.log("event", event)
         var createdDiv,
             info = getSelectionInfo(event);
 
         if (!info) { return; }
+        console.log(event, info)
+        // retrieveMeaning(info)
+        var word = info.word
+        url = `https://en.wikipedia.org/api/rest_v1/page/summary/${word}`
 
-        retrieveMeaning(info)
-            .then((response) => {                
-                if (!response.content) { return noMeaningFound(createdDiv); }
-
-                appendToDiv(createdDiv, response.content);
+        let fetchRes = fetch(url, { 
+            method: 'GET',
+        })
+        console.log(fetchRes)
+        fetchRes.then(response =>  response.status === 200 &&  response.json()) 
+            .then((response) => {    
+                console.log("res", response)            
+                if (!response.extract) { console.log("no found"); return noMeaningFound(createdDiv); }
+                console.log("found word")
+                appendToDiv(createdDiv, {word: word, meaning: response.extract});
             });
+
 
         // Creating this div while we are fetching meaning to make extension more fast.
         createdDiv = createDiv(info);
@@ -23,9 +38,9 @@
 
 
     function getSelectionInfo(event) {
+        console.log("came selection info")
         var word;
         var boundingRect;
-
         if (window.getSelection().toString().length > 1) {
             word = window.getSelection().toString();
             boundingRect = getSelectionCoords(window.getSelection());
@@ -54,6 +69,7 @@
     }
 
     function retrieveMeaning(info){
+        console.log(info)
         return browser.runtime.sendMessage({ word: info.word, lang: LANGUAGE, time: Date.now() });
     }
 
@@ -149,6 +165,7 @@
     }
 
     function appendToDiv(createdDiv, content){
+        console.log(content)
         var hostDiv = createdDiv.heading.getRootNode().host;
         var popupDiv = createdDiv.heading.getRootNode().querySelectorAll("div")[1];
 
@@ -176,6 +193,7 @@
     }
 
     function noMeaningFound (createdDiv){
+        console.log("came no found")
       createdDiv.heading.textContent = "Sorry";
       createdDiv.meaning.textContent = "No definition found.";
     }
@@ -190,16 +208,22 @@
     }
 
     document.addEventListener('dblclick', ((e) => {
+
+        console.log("event:",e)
+        // console.log(window.getSelection().toString())
+        // retrieveMeaning(window.getSelection().toString())
         if (TRIGGER_KEY === 'none') {
+            console.log("1")
             return showMeaning(e);
         }
 
         //e has property altKey, shiftKey, cmdKey representing they key being pressed while double clicking.
         if(e[`${TRIGGER_KEY}Key`]) {
+            console.log("2")
             return showMeaning(e);
         }
 
-        return;
+        return showMeaning(e);
     }));
 
     document.addEventListener('click', removeMeaning);
